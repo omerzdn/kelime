@@ -20,26 +20,22 @@ export default function TextModifier() {
       let line = lines[i].trim();
       if (!line) continue;
 
-      // 1️⃣ Kelime kaldırma
       if (removeWord) line = line.replaceAll(removeWord, "");
 
-      // 2️⃣ Zendesk temizleyici (omer.zendesk.com → omer)
+      // 🔹 Zendesk temizleyici: omer.zendesk.com veya omer.ssl.zendesk.com → omer
       if (removeZendesk) {
-        const match = line.match(/^([\w\d-]+)\.zendesk\./i);
+        const match = line.match(/^([\w\d-]+)(?:\.[\w\d-]+)*\.zendesk\./i);
         if (match) {
           line = match[1];
         }
       }
 
-      // 3️⃣ Ana domain çıkarma
       if (extractDomain) {
         line = getMainDomain(line);
       }
 
-      // 4️⃣ Başına / sonuna ekleme
       const modified = `${prefix}${line}${suffix}`;
 
-      // 5️⃣ Yinelenen satır kontrolü
       if (removeDuplicates) {
         const key = modified.toLowerCase();
         if (seen.has(key)) continue;
@@ -62,7 +58,6 @@ export default function TextModifier() {
     }
   };
 
-  // --- Ana domain çıkarıcı (sub.sub.domain.com → domain.com) ---
   const getMainDomain = (url) => {
     try {
       const normalized = url.match(/^https?:\/\//) ? url : "http://" + url;
@@ -132,7 +127,7 @@ export default function TextModifier() {
           onChange={(e) => setRemoveZendesk(e.target.checked)}
           style={{ marginRight: 5 }}
         />
-        Zendesk temizleyici (örnek: omer.zendesk.com → omer)
+        Zendesk temizleyici (örnek: omer.zendesk.com veya omer.ssl.zendesk.com → omer)
       </label>
 
       <button onClick={modifyText} style={{ marginTop: 10 }}>
