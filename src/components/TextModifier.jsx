@@ -6,11 +6,13 @@ export default function TextModifier() {
   const [suffix, setSuffix] = useState("");
   const [removeWord, setRemoveWord] = useState("");
   const [filterWord, setFilterWord] = useState("");
+  const [searchWord, setSearchWord] = useState(""); // 🔍 Aranacak kelime
+  const [showOnlyMatches, setShowOnlyMatches] = useState(false); // 🔍 Sadece arananı göster
   const [removeDuplicates, setRemoveDuplicates] = useState(false);
   const [extractDomain, setExtractDomain] = useState(false);
   const [removeZendesk, setRemoveZendesk] = useState(false);
-  const [removeAfterSpace, setRemoveAfterSpace] = useState(false); // 🔹 Boşluktan sonrasını sil
-  const [removeBeforeSpace, setRemoveBeforeSpace] = useState(false); // 🔹 Boşluktan öncesini sil
+  const [removeAfterSpace, setRemoveAfterSpace] = useState(false);
+  const [removeBeforeSpace, setRemoveBeforeSpace] = useState(false);
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -23,9 +25,14 @@ export default function TextModifier() {
       let line = lines[i].trim();
       if (!line) continue;
 
-      // 🔹 PowerShell -NotMatch mantığı: belirli kelimeyi içeriyorsa satırı atla
+      // 🔹 PowerShell -NotMatch mantığı (istenmeyen kelime)
       if (filterWord && line.toLowerCase().includes(filterWord.toLowerCase())) {
         continue;
+      }
+
+      // 🔹 Sadece belirli kelimeyi içeren satırları göster
+      if (showOnlyMatches && searchWord) {
+        if (!line.toLowerCase().includes(searchWord.toLowerCase())) continue;
       }
 
       // 🔹 Boşluktan sonrasını sil
@@ -41,9 +48,9 @@ export default function TextModifier() {
       // 🔹 Kelime kaldırma
       if (removeWord) line = line.replaceAll(removeWord, "");
 
-      // 🔹 Zendesk temizleyici
+      // 🔹 Zendesk temizleyici (örnek: omer.zendesk.com veya omer.ssl.zendesk.com → omer)
       if (removeZendesk) {
-        const match = line.match(/^([\w\d-]+)(?:\.[\w\d-]+)*\.zendesk\./i);
+        const match = line.match(/([\w\d-]+)(?=(?:\.[\w\d-]+)*\.zendesk\.)/i);
         if (match) {
           line = match[1];
         }
@@ -124,7 +131,22 @@ export default function TextModifier() {
           value={filterWord}
           onChange={(e) => setFilterWord(e.target.value)}
         />
+        <input
+          placeholder="Aranacak kelime (örnek: zendesk)"
+          value={searchWord}
+          onChange={(e) => setSearchWord(e.target.value)}
+        />
       </div>
+
+      <label style={{ display: "flex", alignItems: "center", marginTop: 10 }}>
+        <input
+          type="checkbox"
+          checked={showOnlyMatches}
+          onChange={(e) => setShowOnlyMatches(e.target.checked)}
+          style={{ marginRight: 5 }}
+        />
+        Sadece bu kelimeyi içeren satırları göster
+      </label>
 
       <label style={{ display: "flex", alignItems: "center", marginTop: 10 }}>
         <input
@@ -142,7 +164,7 @@ export default function TextModifier() {
           checked={removeAfterSpace}
           onChange={(e) => {
             setRemoveAfterSpace(e.target.checked);
-            if (e.target.checked) setRemoveBeforeSpace(false); // aynı anda aktif olmasın
+            if (e.target.checked) setRemoveBeforeSpace(false);
           }}
           style={{ marginRight: 5 }}
         />
@@ -155,7 +177,7 @@ export default function TextModifier() {
           checked={removeBeforeSpace}
           onChange={(e) => {
             setRemoveBeforeSpace(e.target.checked);
-            if (e.target.checked) setRemoveAfterSpace(false); // aynı anda aktif olmasın
+            if (e.target.checked) setRemoveAfterSpace(false);
           }}
           style={{ marginRight: 5 }}
         />
