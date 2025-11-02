@@ -5,10 +5,11 @@ export default function TextModifier() {
   const [prefix, setPrefix] = useState("");
   const [suffix, setSuffix] = useState("");
   const [removeWord, setRemoveWord] = useState("");
-  const [filterWord, setFilterWord] = useState(""); // 🔹 NOT MATCH filtre kelimesi
+  const [filterWord, setFilterWord] = useState("");
   const [removeDuplicates, setRemoveDuplicates] = useState(false);
   const [extractDomain, setExtractDomain] = useState(false);
   const [removeZendesk, setRemoveZendesk] = useState(false);
+  const [removeAfterSpace, setRemoveAfterSpace] = useState(false); // 🔹 CNAME temizleyici
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -21,15 +22,20 @@ export default function TextModifier() {
       let line = lines[i].trim();
       if (!line) continue;
 
-      // 🔹 PowerShell -NotMatch mantığı: belirli bir kelimeyi içeriyorsa satırı atla
+      // 🔹 PowerShell -NotMatch mantığı: belirli kelimeyi içeriyorsa satırı atla
       if (filterWord && line.toLowerCase().includes(filterWord.toLowerCase())) {
         continue;
+      }
+
+      // 🔹 Boşluktan sonrasını sil (örnek: subs.test.com cname.test.com → subs.test.com)
+      if (removeAfterSpace && line.includes(" ")) {
+        line = line.split(" ")[0];
       }
 
       // 🔹 Kelime kaldırma
       if (removeWord) line = line.replaceAll(removeWord, "");
 
-      // 🔹 Zendesk temizleyici: omer.zendesk.com veya omer.ssl.zendesk.com → omer
+      // 🔹 Zendesk temizleyici
       if (removeZendesk) {
         const match = line.match(/^([\w\d-]+)(?:\.[\w\d-]+)*\.zendesk\./i);
         if (match) {
@@ -122,6 +128,16 @@ export default function TextModifier() {
           style={{ marginRight: 5 }}
         />
         Aynı satırları kaldır (küçük/büyük harf fark etmez)
+      </label>
+
+      <label style={{ display: "flex", alignItems: "center", marginTop: 5 }}>
+        <input
+          type="checkbox"
+          checked={removeAfterSpace}
+          onChange={(e) => setRemoveAfterSpace(e.target.checked)}
+          style={{ marginRight: 5 }}
+        />
+        Boşluktan sonrasını sil (örnek: subs.test.com cname.test.com → subs.test.com)
       </label>
 
       <label style={{ display: "flex", alignItems: "center", marginTop: 5 }}>
