@@ -8,6 +8,8 @@ export default function TextModifier() {
   const [removeDuplicates, setRemoveDuplicates] = useState(false);
   const [extractDomain, setExtractDomain] = useState(false);
   const [removeZendesk, setRemoveZendesk] = useState(false);
+  const [filterPattern, setFilterPattern] = useState("");
+  const [enableNotMatch, setEnableNotMatch] = useState(false);
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -16,13 +18,20 @@ export default function TextModifier() {
     const seen = new Set();
     const output = [];
 
+    const pattern =
+      filterPattern && enableNotMatch
+        ? new RegExp(filterPattern, "i")
+        : filterPattern
+        ? new RegExp(filterPattern, "i")
+        : null;
+
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i].trim();
       if (!line) continue;
 
       if (removeWord) line = line.replaceAll(removeWord, "");
 
-      // 🔹 Zendesk temizleyici: omer.zendesk.com veya omer.ssl.zendesk.com → omer
+      // Zendesk temizleyici (omer.zendesk.com, yarrak.ssl.zendesk.com → omer, yarrak)
       if (removeZendesk) {
         const match = line.match(/^([\w\d-]+)(?:\.[\w\d-]+)*\.zendesk\./i);
         if (match) {
@@ -30,8 +39,15 @@ export default function TextModifier() {
         }
       }
 
+      // Ana domain çıkarma
       if (extractDomain) {
         line = getMainDomain(line);
+      }
+
+      // PowerShell -NotMatch mantığı
+      if (pattern) {
+        const matched = pattern.test(line);
+        if (enableNotMatch ? matched : !matched) continue;
       }
 
       const modified = `${prefix}${line}${suffix}`;
@@ -129,6 +145,24 @@ export default function TextModifier() {
         />
         Zendesk temizleyici (örnek: omer.zendesk.com veya omer.ssl.zendesk.com → omer)
       </label>
+
+      <div style={{ marginTop: 10 }}>
+        <input
+          placeholder="Filtre deseni (örnek: telenor.se)"
+          value={filterPattern}
+          onChange={(e) => setFilterPattern(e.target.value)}
+          style={{ width: "100%", padding: 5 }}
+        />
+        <label style={{ display: "flex", alignItems: "center", marginTop: 5 }}>
+          <input
+            type="checkbox"
+            checked={enableNotMatch}
+            onChange={(e) => setEnableNotMatch(e.target.checked)}
+            style={{ marginRight: 5 }}
+          />
+          Desene *uymayan* satırları göster (-NotMatch)
+        </label>
+      </div>
 
       <button onClick={modifyText} style={{ marginTop: 10 }}>
         Dönüştür
