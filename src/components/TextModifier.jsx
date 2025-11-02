@@ -6,8 +6,8 @@ export default function TextModifier() {
   const [suffix, setSuffix] = useState("");
   const [removeWord, setRemoveWord] = useState("");
   const [filterWord, setFilterWord] = useState("");
-  const [searchWord, setSearchWord] = useState(""); // 🔍 Aranacak kelime
-  const [showOnlyMatches, setShowOnlyMatches] = useState(false); // 🔍 Sadece arananı göster
+  const [searchWord, setSearchWord] = useState("");
+  const [showOnlyMatches, setShowOnlyMatches] = useState(false);
   const [removeDuplicates, setRemoveDuplicates] = useState(false);
   const [extractDomain, setExtractDomain] = useState(false);
   const [removeZendesk, setRemoveZendesk] = useState(false);
@@ -25,35 +25,28 @@ export default function TextModifier() {
       let line = lines[i].trim();
       if (!line) continue;
 
-      // 🔹 PowerShell -NotMatch mantığı (istenmeyen kelime)
-      if (filterWord && line.toLowerCase().includes(filterWord.toLowerCase())) {
-        continue;
-      }
+      // 🔹 Filtre: Belirli kelimeyi içeren satırları atla
+      if (filterWord && line.toLowerCase().includes(filterWord.toLowerCase())) continue;
 
-      // 🔹 Sadece belirli kelimeyi içeren satırları göster
+      // 🔹 Sadece aranan kelimeyi içeren satırları göster
       if (showOnlyMatches && searchWord) {
         if (!line.toLowerCase().includes(searchWord.toLowerCase())) continue;
       }
 
       // 🔹 Boşluktan sonrasını sil
-      if (removeAfterSpace && line.includes(" ")) {
-        line = line.split(" ")[0];
-      }
+      if (removeAfterSpace && line.includes(" ")) line = line.split(" ")[0];
 
       // 🔹 Boşluktan öncesini sil
-      if (removeBeforeSpace && line.includes(" ")) {
+      if (removeBeforeSpace && line.includes(" "))
         line = line.split(" ").slice(1).join(" ").trim();
-      }
 
       // 🔹 Kelime kaldırma
       if (removeWord) line = line.replaceAll(removeWord, "");
 
-      // 🔹 Zendesk temizleyici (örnek: omer.zendesk.com veya omer.ssl.zendesk.com → omer)
+      // 🔹 Zendesk temizleyici
       if (removeZendesk) {
         const match = line.match(/([\w\d-]+)(?=(?:\.[\w\d-]+)*\.zendesk\.)/i);
-        if (match) {
-          line = match[1];
-        }
+        if (match) line = match[1];
       }
 
       // 🔹 Ana domain çıkarma
@@ -63,7 +56,7 @@ export default function TextModifier() {
 
       const modified = `${prefix}${line}${suffix}`;
 
-      // 🔹 Yinelenenleri kaldır
+      // 🔹 Yinelenen satır kontrolü
       if (removeDuplicates) {
         const key = modified.toLowerCase();
         if (seen.has(key)) continue;
@@ -84,6 +77,23 @@ export default function TextModifier() {
     } catch (err) {
       alert("Kopyalama başarısız: " + err.message);
     }
+  };
+
+  const clearAll = () => {
+    setInputText("");
+    setResult("");
+    setCopied(false);
+    setPrefix("");
+    setSuffix("");
+    setRemoveWord("");
+    setFilterWord("");
+    setSearchWord("");
+    setShowOnlyMatches(false);
+    setRemoveDuplicates(false);
+    setExtractDomain(false);
+    setRemoveZendesk(false);
+    setRemoveAfterSpace(false);
+    setRemoveBeforeSpace(false);
   };
 
   const getMainDomain = (url) => {
@@ -204,17 +214,21 @@ export default function TextModifier() {
         Zendesk temizleyici (örnek: omer.zendesk.com veya omer.ssl.zendesk.com → omer)
       </label>
 
-      <button onClick={modifyText} style={{ marginTop: 10 }}>
-        Dönüştür
-      </button>
-
-      {result && (
-        <div style={{ marginTop: 10 }}>
+      {/* 🔹 Buton grubu */}
+      <div style={{ display: "flex", gap: 10, marginTop: 15 }}>
+        <button onClick={modifyText}>Dönüştür</button>
+        {result && (
           <button onClick={copyToClipboard}>
             {copied ? "Kopyalandı!" : "Sonucu Kopyala"}
           </button>
-        </div>
-      )}
+        )}
+        <button
+          onClick={clearAll}
+          style={{ backgroundColor: "#ff4d4d", color: "white", border: "none", padding: "6px 12px", borderRadius: 5 }}
+        >
+          Temizle
+        </button>
+      </div>
 
       <textarea
         rows={10}
