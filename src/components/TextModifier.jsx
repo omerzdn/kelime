@@ -7,6 +7,7 @@ export default function TextModifier() {
   const [removeWord, setRemoveWord] = useState("");
   const [removeDuplicates, setRemoveDuplicates] = useState(false);
   const [extractDomain, setExtractDomain] = useState(false);
+  const [removeZendesk, setRemoveZendesk] = useState(false);
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -19,14 +20,26 @@ export default function TextModifier() {
       let line = lines[i].trim();
       if (!line) continue;
 
+      // 1️⃣ Kelime kaldırma
       if (removeWord) line = line.replaceAll(removeWord, "");
 
+      // 2️⃣ Zendesk temizleyici (omer.zendesk.com → omer)
+      if (removeZendesk) {
+        const match = line.match(/^([\w\d-]+)\.zendesk\./i);
+        if (match) {
+          line = match[1];
+        }
+      }
+
+      // 3️⃣ Ana domain çıkarma
       if (extractDomain) {
         line = getMainDomain(line);
       }
 
+      // 4️⃣ Başına / sonuna ekleme
       const modified = `${prefix}${line}${suffix}`;
 
+      // 5️⃣ Yinelenen satır kontrolü
       if (removeDuplicates) {
         const key = modified.toLowerCase();
         if (seen.has(key)) continue;
@@ -49,20 +62,16 @@ export default function TextModifier() {
     }
   };
 
-  // --- Basitleştirilmiş ana domain çıkarıcı ---
+  // --- Ana domain çıkarıcı (sub.sub.domain.com → domain.com) ---
   const getMainDomain = (url) => {
     try {
-      // http ekle (URL API'si için zorunlu)
       const normalized = url.match(/^https?:\/\//) ? url : "http://" + url;
       const hostname = new URL(normalized).hostname;
-
-      // Parçalara ayır ve sondan 2 tanesini al (domain + TLD)
       const parts = hostname.split(".");
       if (parts.length < 2) return hostname;
-
       return parts.slice(-2).join(".");
     } catch {
-      return url; // geçersizse dokunma
+      return url;
     }
   };
 
@@ -114,6 +123,16 @@ export default function TextModifier() {
           style={{ marginRight: 5 }}
         />
         Sadece ana domaini al (örnek: sub.sub.domain.com → domain.com)
+      </label>
+
+      <label style={{ display: "flex", alignItems: "center", marginTop: 5 }}>
+        <input
+          type="checkbox"
+          checked={removeZendesk}
+          onChange={(e) => setRemoveZendesk(e.target.checked)}
+          style={{ marginRight: 5 }}
+        />
+        Zendesk temizleyici (örnek: omer.zendesk.com → omer)
       </label>
 
       <button onClick={modifyText} style={{ marginTop: 10 }}>
