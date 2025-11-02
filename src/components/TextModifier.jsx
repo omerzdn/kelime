@@ -9,7 +9,8 @@ export default function TextModifier() {
   const [removeDuplicates, setRemoveDuplicates] = useState(false);
   const [extractDomain, setExtractDomain] = useState(false);
   const [removeZendesk, setRemoveZendesk] = useState(false);
-  const [removeAfterSpace, setRemoveAfterSpace] = useState(false); // 🔹 CNAME temizleyici
+  const [removeAfterSpace, setRemoveAfterSpace] = useState(false); // 🔹 Boşluktan sonrasını sil
+  const [removeBeforeSpace, setRemoveBeforeSpace] = useState(false); // 🔹 Boşluktan öncesini sil
   const [result, setResult] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -27,9 +28,14 @@ export default function TextModifier() {
         continue;
       }
 
-      // 🔹 Boşluktan sonrasını sil (örnek: subs.test.com cname.test.com → subs.test.com)
+      // 🔹 Boşluktan sonrasını sil
       if (removeAfterSpace && line.includes(" ")) {
         line = line.split(" ")[0];
+      }
+
+      // 🔹 Boşluktan öncesini sil
+      if (removeBeforeSpace && line.includes(" ")) {
+        line = line.split(" ").slice(1).join(" ").trim();
       }
 
       // 🔹 Kelime kaldırma
@@ -134,10 +140,26 @@ export default function TextModifier() {
         <input
           type="checkbox"
           checked={removeAfterSpace}
-          onChange={(e) => setRemoveAfterSpace(e.target.checked)}
+          onChange={(e) => {
+            setRemoveAfterSpace(e.target.checked);
+            if (e.target.checked) setRemoveBeforeSpace(false); // aynı anda aktif olmasın
+          }}
           style={{ marginRight: 5 }}
         />
         Boşluktan sonrasını sil (örnek: subs.test.com cname.test.com → subs.test.com)
+      </label>
+
+      <label style={{ display: "flex", alignItems: "center", marginTop: 5 }}>
+        <input
+          type="checkbox"
+          checked={removeBeforeSpace}
+          onChange={(e) => {
+            setRemoveBeforeSpace(e.target.checked);
+            if (e.target.checked) setRemoveAfterSpace(false); // aynı anda aktif olmasın
+          }}
+          style={{ marginRight: 5 }}
+        />
+        Boşluktan öncesini sil (örnek: subs.test.com cname.test.com → cname.test.com)
       </label>
 
       <label style={{ display: "flex", alignItems: "center", marginTop: 5 }}>
