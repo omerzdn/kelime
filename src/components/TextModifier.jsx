@@ -6,25 +6,64 @@ export default function TextModifier() {
   const [suffix, setSuffix] = useState("");
   const [removeWord, setRemoveWord] = useState("");
   const [removeDuplicates, setRemoveDuplicates] = useState(false);
+  const [extractDomain, setExtractDomain] = useState(false);
   const [result, setResult] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const modifyText = () => {
+    const lines = inputText.split("\n");
     const seen = new Set();
-    const modified = inputText
-      .split("\n")
-      .map((line) => {
-        let modifiedLine = line.replaceAll(removeWord, "");
-        return `${prefix}${modifiedLine}${suffix}`;
-      })
-      .filter((line) => {
-        if (!removeDuplicates) return true;
-        const key = line.toLowerCase();
-        if (seen.has(key)) return false;
+    const output = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].trim();
+      if (!line) continue;
+
+      if (removeWord) line = line.replaceAll(removeWord, "");
+
+      if (extractDomain) {
+        line = getMainDomain(line);
+      }
+
+      const modified = `${prefix}${line}${suffix}`;
+
+      if (removeDuplicates) {
+        const key = modified.toLowerCase();
+        if (seen.has(key)) continue;
         seen.add(key);
-        return true;
-      })
-      .join("\n");
-    setResult(modified);
+      }
+
+      output.push(modified);
+    }
+
+    setResult(output.join("\n"));
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(result);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      alert("Kopyalama başarısız: " + err.message);
+    }
+  };
+
+  // --- Basitleştirilmiş ana domain çıkarıcı ---
+  const getMainDomain = (url) => {
+    try {
+      // http ekle (URL API'si için zorunlu)
+      const normalized = url.match(/^https?:\/\//) ? url : "http://" + url;
+      const hostname = new URL(normalized).hostname;
+
+      // Parçalara ayır ve sondan 2 tanesini al (domain + TLD)
+      const parts = hostname.split(".");
+      if (parts.length < 2) return hostname;
+
+      return parts.slice(-2).join(".");
+    } catch {
+      return url; // geçersizse dokunma
+    }
   };
 
   return (
@@ -39,7 +78,7 @@ export default function TextModifier() {
         style={{ width: "100%", padding: 10, marginTop: 10 }}
       />
 
-      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+      <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
         <input
           placeholder="Başına eklenecek..."
           value={prefix}
@@ -64,12 +103,30 @@ export default function TextModifier() {
           onChange={(e) => setRemoveDuplicates(e.target.checked)}
           style={{ marginRight: 5 }}
         />
-        Aynı satırları (küçük/büyük harf fark etmeden) kaldır
+        Aynı satırları kaldır (küçük/büyük harf fark etmez)
+      </label>
+
+      <label style={{ display: "flex", alignItems: "center", marginTop: 5 }}>
+        <input
+          type="checkbox"
+          checked={extractDomain}
+          onChange={(e) => setExtractDomain(e.target.checked)}
+          style={{ marginRight: 5 }}
+        />
+        Sadece ana domaini al (örnek: sub.sub.domain.com → domain.com)
       </label>
 
       <button onClick={modifyText} style={{ marginTop: 10 }}>
         Dönüştür
       </button>
+
+      {result && (
+        <div style={{ marginTop: 10 }}>
+          <button onClick={copyToClipboard}>
+            {copied ? "Kopyalandı!" : "Sonucu Kopyala"}
+          </button>
+        </div>
+      )}
 
       <textarea
         rows={10}
