@@ -1,0 +1,454 @@
+/* NS Lookup - Clean White Theme */
+
+.ns-container {
+  min-height: 100vh;
+  background: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1a1a1a;
+}
+
+/* Header - only after search */
+.ns-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.ns-header .logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.ns-header .logo:hover {
+  color: #0066cc;
+}
+
+.header-search {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  max-width: 500px;
+}
+
+.header-search input {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.header-search input:focus {
+  border-color: #0066cc;
+}
+
+.header-search button {
+  padding: 0.6rem 1.2rem;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.header-search button:hover {
+  background: #333;
+}
+
+/* Main */
+.ns-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Hero - centered search before search */
+.hero {
+  text-align: center;
+  padding: 10rem 2rem;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 2.5rem;
+}
+
+.hero-search {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.hero-search input {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+}
+
+.hero-search input:focus {
+  border-color: #0066cc;
+}
+
+.hero-search button {
+  padding: 1rem 2rem;
+  background: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hero-search button:hover {
+  background: #0052a3;
+}
+
+/* Results */
+.results-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.results-title span {
+  color: #0066cc;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.tabs button {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.tabs button:hover {
+  background: #f5f5f5;
+}
+
+.tabs button.active {
+  background: #0066cc;
+  color: white;
+}
+
+.dns-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.dns-tabs button {
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #666;
+  border-radius: 4px;
+}
+
+.dns-tabs button:hover {
+  color: #1a1a1a;
+}
+
+.dns-tabs button.active {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+/* Info banner */
+.info-banner {
+  background: #f8f9fa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+/* Record sections */
+.record-section {
+  margin-bottom: 2rem;
+}
+
+.record-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.record-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.record-table th,
+.record-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.record-table th {
+  background: #f8f9fa;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.record-table tr:last-child td {
+  border-bottom: none;
+}
+
+.record-table .link {
+  color: #0066cc;
+}
+
+.record-table .txt-value {
+  font-family: monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+.badge {
+  display: inline-block;
+  background: #22c55e;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  text-transform: uppercase;
+}
+
+.no-records {
+  color: #999;
+  font-style: italic;
+}
+
+/* Status */
+.status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: monospace;
+}
+
+/* Raw data */
+.raw-section {
+  margin-top: 2rem;
+}
+
+.raw-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.raw-data {
+  background: #1a1a1a;
+  color: #e5e5e5;
+  padding: 1rem;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e5e5;
+  border-top-color: #0066cc;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error */
+.error {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ns-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .home-btn {
+    font-size: 1.25rem;
+  }
+
+  .ns-header .logo {
+    font-size: 1.1rem;
+  }
+
+  .header-search {
+    width: 100%;
+    max-width: none;
+    order: 3;
+    flex-direction: column;
+  }
+
+  .header-search button {
+    width: 100%;
+  }
+
+  .ns-main {
+    padding: 1rem;
+  }
+
+  .hero {
+    padding: 3rem 1rem;
+  }
+
+  .hero h1 {
+    font-size: 1.75rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  .hero-search {
+    flex-direction: column;
+  }
+
+  .hero-search input {
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+
+  .hero-search button {
+    width: 100%;
+    padding: 0.875rem;
+  }
+
+  .results-title {
+    font-size: 1.25rem;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tabs button {
+    flex: 1;
+    min-width: 45%;
+  }
+
+  .dns-tabs {
+    flex-wrap: wrap;
+  }
+
+  .record-table {
+    font-size: 0.85rem;
+  }
+
+  .record-table th,
+  .record-table td {
+    padding: 0.5rem;
+  }
+
+  .raw-data {
+    font-size: 0.7rem;
+    max-height: 300px;
+  }
+
+  .status-badge {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+  }
+}
+
+/* Home button */
+.home-btn {
+  font-size: 1.5rem;
+  text-decoration: none;
+  color: #1a1a1a;
+}
+
+.home-btn:hover {
+  color: #0066cc;
+}
+
+.hero-home {
+  display: inline-block;
+  margin-bottom: 2rem;
+  color: #666;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.hero-home:hover {
+  color: #0066cc;
+}
