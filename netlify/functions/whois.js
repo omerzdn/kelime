@@ -25,107 +25,215 @@ exports.handler = async (event) => {
         // Clean domain
         const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/.*$/, '').toLowerCase();
 
-        // Use WHOIS API (free tier available)
-        // Option 1: who-dat.as93.net (free, no API key needed)
-        const response = await fetch(`https://who-dat.as93.net/${cleanDomain}`);
-
-        if (!response.ok) {
-            throw new Error('WHOIS lookup failed');
-        }
-
-        const data = await response.json();
-
-        // Build raw text from response
+        // Try multiple WHOIS sources
         let rawData = '';
+        let parsed = {};
 
-        if (data.domain) {
-            rawData += `Domain Name: ${data.domain.name || cleanDomain}\n`;
-            rawData += `Registry Domain ID: ${data.domain.id || ''}\n`;
+        // Try 1: RDAP directly with more detailed parsing
+        try {
+            const rdapResponse = await fetch(`https://rdap.verisign.com/com/v1/domain/${cleanDomain}`, {
+                headers: { 'Accept': 'application/rdap+json' }
+            });
+
+            if (rdapResponse.ok) {
+                const data = await rdapResponse.json();
+
+                // Build raw WHOIS text
+                rawData = `Domain Name: ${data.ldhName || cleanDomain.toUpperCase()}\n`;
+                rawData += `Registry Domain ID: ${data.handle || ''}\n`;
+
+                // Extract all entities
+                let registrar = { name: '', iana: '', email: '', phone: '', url: '', whoisServer: '' };
+                let registrant = { org: '', name: '', country: '', state: '', city: '', street: '', postal: '', email: '', phone: '' };
+                let admin = { org: '', name: '', country: '', state: '', email: '', phone: '' };
+                let tech = { org: '', name: '', country: '', state: '', email: '', phone: '' };
+
+                const parseVcard = (vcardArray) => {
+                    const result = {};
+                    if (!vcardArray || !vcardArray[1]) return result;
+                    for (const prop of vcardArray[1]) {
+                        if (prop[0] === 'fn') result.name = prop[3];
+                        if (prop[0] === 'org') result.org = Array.isArray(prop[3]) ? prop[3][0] : prop[3];
+                        if (prop[0] === 'email') result.email = prop[3];
+                        if (prop[0] === 'tel') result.phone = prop[3];
+                        if (prop[0] === 'adr' && Array.isArray(prop[3])) {
+                            result.street = prop[3][2] || '';
+                            result.city = prop[3][3] || '';
+                            result.state = prop[3][4] || '';
+                            result.postal = prop[3][5] || '';
+                            result.country = prop[3][6] || '';
+                        }
+                    }
+                    return result;
+                };
+
+                const parseEntity = (entity, depth = 0) => {
+                    if (!entity || depth > 2) return;
+                    const roles = entity.roles || [];
+                    const vcard = parseVcard(entity.vcardArray);
+
+                    if (roles.includes('registrar')) {
+                        registrar.name = vcard.name || vcard.org || '';
+                        registrar.email = vcard.email || '';
+                        registrar.phone = vcard.phone || '';
+                        if (entity.publicIds) {
+                            for (const id of entity.publicIds) {
+                                if (id.type === 'IANA Registrar ID') registrar.iana = id.identifier;
+                            }
+                        }
+                        if (entity.links) {
+                            for (const link of entity.links) {
+                                if (link.rel === 'self') registrar.url = link.href;
+                            }
+                        }
+                    }
+                    if (roles.includes('registrant')) {
+                        Object.assign(registrant, vcard);
+                    }
+                    if (roles.includes('administrative')) {
+                        Object.assign(admin, vcard);
+                    }
+                    if (roles.includes('technical')) {
+                        Object.assign(tech, vcard);
+                    }
+
+                    // Check nested entities
+                    if (entity.entities) {
+                        for (const nested of entity.entities) {
+                            parseEntity(nested, depth + 1);
+                        }
+                    }
+                };
+
+                if (data.entities) {
+                    for (const entity of data.entities) {
+                        parseEntity(entity);
+                    }
+                }
+
+                // Dates
+                let created = '', updated = '', expires = '';
+                if (data.events) {
+                    for (const e of data.events) {
+                        if (e.eventAction === 'registration') created = e.eventDate;
+                        if (e.eventAction === 'expiration') expires = e.eventDate;
+                        if (e.eventAction === 'last changed') updated = e.eventDate;
+                    }
+                }
+
+                rawData += `Registrar WHOIS Server: ${registrar.whoisServer}\n`;
+                rawData += `Registrar URL: ${registrar.url}\n`;
+                rawData += `Updated Date: ${updated}\n`;
+                rawData += `Creation Date: ${created}\n`;
+                rawData += `Registry Expiry Date: ${expires}\n`;
+                rawData += `Registrar: ${registrar.name}\n`;
+                rawData += `Registrar IANA ID: ${registrar.iana}\n`;
+                rawData += `Registrar Abuse Contact Email: ${registrar.email}\n`;
+                rawData += `Registrar Abuse Contact Phone: ${registrar.phone}\n`;
+
+                // Status
+                if (data.status) {
+                    for (const s of data.status) {
+                        rawData += `Domain Status: ${s}\n`;
+                    }
+                }
+
+                // Registrant
+                rawData += `Registry Registrant ID: \n`;
+                rawData += `Registrant Name: ${registrant.name}\n`;
+                rawData += `Registrant Organization: ${registrant.org}\n`;
+                rawData += `Registrant Street: ${registrant.street}\n`;
+                rawData += `Registrant City: ${registrant.city}\n`;
+                rawData += `Registrant State/Province: ${registrant.state}\n`;
+                rawData += `Registrant Postal Code: ${registrant.postal}\n`;
+                rawData += `Registrant Country: ${registrant.country}\n`;
+                rawData += `Registrant Phone: ${registrant.phone}\n`;
+                rawData += `Registrant Phone Ext: \n`;
+                rawData += `Registrant Fax: \n`;
+                rawData += `Registrant Fax Ext: \n`;
+                rawData += `Registrant Email: ${registrant.email}\n`;
+
+                // Admin
+                rawData += `Registry Admin ID: \n`;
+                rawData += `Admin Name: ${admin.name}\n`;
+                rawData += `Admin Organization: ${admin.org}\n`;
+                rawData += `Admin Street: \n`;
+                rawData += `Admin City: \n`;
+                rawData += `Admin State/Province: ${admin.state}\n`;
+                rawData += `Admin Postal Code: \n`;
+                rawData += `Admin Country: ${admin.country}\n`;
+                rawData += `Admin Phone: ${admin.phone}\n`;
+                rawData += `Admin Phone Ext: \n`;
+                rawData += `Admin Fax: \n`;
+                rawData += `Admin Fax Ext: \n`;
+                rawData += `Admin Email: ${admin.email}\n`;
+
+                // Tech
+                rawData += `Registry Tech ID: \n`;
+                rawData += `Tech Name: ${tech.name}\n`;
+                rawData += `Tech Organization: ${tech.org}\n`;
+                rawData += `Tech Street: \n`;
+                rawData += `Tech City: \n`;
+                rawData += `Tech State/Province: ${tech.state}\n`;
+                rawData += `Tech Postal Code: \n`;
+                rawData += `Tech Country: ${tech.country}\n`;
+                rawData += `Tech Phone: ${tech.phone}\n`;
+                rawData += `Tech Phone Ext: \n`;
+                rawData += `Tech Fax: \n`;
+                rawData += `Tech Fax Ext: \n`;
+                rawData += `Tech Email: ${tech.email}\n`;
+
+                // Name servers
+                if (data.nameservers) {
+                    for (const ns of data.nameservers) {
+                        rawData += `Name Server: ${ns.ldhName || ''}\n`;
+                    }
+                }
+
+                rawData += `DNSSEC: ${data.secureDNS?.delegationSigned ? 'signedDelegation' : 'unsigned'}\n`;
+                rawData += `Source: RDAP (Verisign)\n`;
+
+                parsed = {
+                    domainName: data.ldhName || cleanDomain.toUpperCase(),
+                    registrar: registrar.name,
+                    creationDate: created,
+                    expiryDate: expires,
+                    updatedDate: updated,
+                    registrantOrganization: registrant.org,
+                    registrantCountry: registrant.country,
+                    registrantState: registrant.state,
+                    nameServer: data.nameservers?.map(ns => ns.ldhName) || [],
+                    domainStatus: data.status
+                };
+            }
+        } catch (e) {
+            console.error('Verisign RDAP error:', e);
         }
 
-        rawData += `Registrar WHOIS Server: ${data.registrar?.whois_server || ''}\n`;
-        rawData += `Registrar URL: ${data.registrar?.url || ''}\n`;
-        rawData += `Updated Date: ${data.domain?.updated_date || ''}\n`;
-        rawData += `Creation Date: ${data.domain?.created_date || ''}\n`;
-        rawData += `Registry Expiry Date: ${data.domain?.expiration_date || ''}\n`;
-        rawData += `Registrar: ${data.registrar?.name || ''}\n`;
-        rawData += `Registrar IANA ID: ${data.registrar?.iana_id || ''}\n`;
-        rawData += `Registrar Abuse Contact Email: ${data.registrar?.abuse_contact_email || ''}\n`;
-        rawData += `Registrar Abuse Contact Phone: ${data.registrar?.abuse_contact_phone || ''}\n`;
+        // If Verisign failed, try generic RDAP
+        if (!rawData) {
+            try {
+                const rdapResponse = await fetch(`https://rdap.org/domain/${cleanDomain}`, {
+                    headers: { 'Accept': 'application/rdap+json' }
+                });
 
-        if (data.domain?.status) {
-            const statuses = Array.isArray(data.domain.status) ? data.domain.status : [data.domain.status];
-            for (const s of statuses) {
-                rawData += `Domain Status: ${s}\n`;
+                if (rdapResponse.ok) {
+                    const data = await rdapResponse.json();
+                    rawData = JSON.stringify(data, null, 2);
+                    parsed = { domainName: cleanDomain.toUpperCase() };
+                }
+            } catch (e) {
+                console.error('RDAP.org error:', e);
             }
         }
 
-        // Registrant info
-        rawData += `Registry Registrant ID: ${data.registrant?.id || ''}\n`;
-        rawData += `Registrant Name: ${data.registrant?.name || ''}\n`;
-        rawData += `Registrant Organization: ${data.registrant?.organization || ''}\n`;
-        rawData += `Registrant Street: ${data.registrant?.street || ''}\n`;
-        rawData += `Registrant City: ${data.registrant?.city || ''}\n`;
-        rawData += `Registrant State/Province: ${data.registrant?.province || ''}\n`;
-        rawData += `Registrant Postal Code: ${data.registrant?.postal_code || ''}\n`;
-        rawData += `Registrant Country: ${data.registrant?.country || ''}\n`;
-        rawData += `Registrant Phone: ${data.registrant?.phone || ''}\n`;
-        rawData += `Registrant Phone Ext: \n`;
-        rawData += `Registrant Fax: ${data.registrant?.fax || ''}\n`;
-        rawData += `Registrant Fax Ext: \n`;
-        rawData += `Registrant Email: ${data.registrant?.email || ''}\n`;
-
-        // Admin info
-        rawData += `Registry Admin ID: ${data.admin?.id || ''}\n`;
-        rawData += `Admin Name: ${data.admin?.name || ''}\n`;
-        rawData += `Admin Organization: ${data.admin?.organization || ''}\n`;
-        rawData += `Admin Street: ${data.admin?.street || ''}\n`;
-        rawData += `Admin City: ${data.admin?.city || ''}\n`;
-        rawData += `Admin State/Province: ${data.admin?.province || ''}\n`;
-        rawData += `Admin Postal Code: ${data.admin?.postal_code || ''}\n`;
-        rawData += `Admin Country: ${data.admin?.country || ''}\n`;
-        rawData += `Admin Phone: ${data.admin?.phone || ''}\n`;
-        rawData += `Admin Phone Ext: \n`;
-        rawData += `Admin Fax: ${data.admin?.fax || ''}\n`;
-        rawData += `Admin Fax Ext: \n`;
-        rawData += `Admin Email: ${data.admin?.email || ''}\n`;
-
-        // Tech info
-        rawData += `Registry Tech ID: ${data.tech?.id || ''}\n`;
-        rawData += `Tech Name: ${data.tech?.name || ''}\n`;
-        rawData += `Tech Organization: ${data.tech?.organization || ''}\n`;
-        rawData += `Tech Street: ${data.tech?.street || ''}\n`;
-        rawData += `Tech City: ${data.tech?.city || ''}\n`;
-        rawData += `Tech State/Province: ${data.tech?.province || ''}\n`;
-        rawData += `Tech Postal Code: ${data.tech?.postal_code || ''}\n`;
-        rawData += `Tech Country: ${data.tech?.country || ''}\n`;
-        rawData += `Tech Phone: ${data.tech?.phone || ''}\n`;
-        rawData += `Tech Phone Ext: \n`;
-        rawData += `Tech Fax: ${data.tech?.fax || ''}\n`;
-        rawData += `Tech Fax Ext: \n`;
-        rawData += `Tech Email: ${data.tech?.email || ''}\n`;
-
-        // Name servers
-        if (data.name_servers) {
-            for (const ns of data.name_servers) {
-                rawData += `Name Server: ${ns}\n`;
-            }
+        if (!rawData) {
+            return {
+                statusCode: 404,
+                headers,
+                body: JSON.stringify({ error: 'WHOIS data not found' })
+            };
         }
-
-        rawData += `DNSSEC: ${data.dnssec || 'unsigned'}\n`;
-
-        // Build parsed object
-        const parsed = {
-            domainName: data.domain?.name || cleanDomain,
-            registrar: data.registrar?.name,
-            creationDate: data.domain?.created_date,
-            expiryDate: data.domain?.expiration_date,
-            updatedDate: data.domain?.updated_date,
-            registrantOrganization: data.registrant?.organization,
-            registrantCountry: data.registrant?.country,
-            nameServer: data.name_servers,
-            domainStatus: data.domain?.status
-        };
 
         return {
             statusCode: 200,
